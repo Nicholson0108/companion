@@ -6,12 +6,9 @@ const SocketIOFile = require('socket.io-file');
 var logger = require('tracer').console();
 var os = require("os");
 var env = process.env
-var home_dir = process.env.HOME
 logger.log('ENVIRONMENT', process.env)
 logger.log('COMPANION_DIR', process.env.COMPANION_DIR)
-logger.log('HOME_DIR', process.env.HOME)
 app.use(express.static('public'));
-app.use('/webui.log', express.static(home_dir+'/.webui.log'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); // redirect bootstrap JS
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/font-awesome', express.static(__dirname + '/node_modules/font-awesome')); // redirect JS jQuery
@@ -58,7 +55,7 @@ var _cameras = []
 var _activeFormat
 
 try {
-	var file_path = home_dir+"/vidformat.param";
+	var file_path = "/home/pi/vidformat.param";
 	var file_data = fs.readFileSync(file_path).toString();
 	var fields = file_data.split("\n");
 	_activeFormat = { "frameSize": fields[0] + "x" + fields[1], "frameRate": fields[2], "device": fields[3], "format": "H264" }
@@ -71,7 +68,7 @@ var _profiles = {};
 
 // Load saved user camera/streaming profiles
 try {
-	var file_path = home_dir+"/camera-profiles";
+	var file_path = "/home/pi/camera-profiles";
 	_profiles = JSON.parse(fs.readFileSync(file_path).toString());
 	logger.log("loading profiles from file", _profiles);
 } catch (err) {
@@ -80,7 +77,7 @@ try {
 
 //This holds all of the last used/known settings from previous run
 var old_cameras = []
-const camera_settings_path = home_dir+"/camera-settings"
+const camera_settings_path = "/home/pi/camera-settings"
 // Load the last known camera settings
 try {
 	var file_data = fs.readFileSync(camera_settings_path);
@@ -159,10 +156,6 @@ app.get('/system', function(req, res) {
 	res.render('system', {});
 });
 
-app.get('/ping', function(req, res) {
-	res.render('ping', {});
-});
-
 app.get('/camera', function(req, res) {
 	res.render('camera', {});
 });
@@ -183,10 +176,6 @@ app.get('/security', function(req, res) {
 	res.render('security', {});
 });
 
-app.get('/vlc.sdp', function (req, res) {
-  var file = __dirname + '/files/vlc.sdp';
-  res.download(file);
-});
 
 app.get('/test', function(req, res) {
 	var module = req.query['module'];
@@ -261,8 +250,8 @@ app.post('/test', function(req, res) {
 	}
 });
 
-app.get(home_dir+'/server.php', function(req, res) {
-	return res.sendFile(home_dir+'/server.php');
+app.get('/home/pi/server.php', function(req, res) {
+	return res.sendFile('/home/pi/server.php');
 });
 
 app.get('/git', function(req, res) {
@@ -275,36 +264,6 @@ app.get('/socket.io-file-client.js', (req, res, next) => {
 
 app.get('/network.min.js', (req, res, next) => {
 	return res.sendFile(__dirname + '/node_modules/network-js/dist/network.min.js');
-});
-
-app.get("/udevadm", function(req, res) {
-    var pattern = "";
-
-    if (req.query.pattern) {
-        pattern = "--pattern=" + req.query.pattern;
-    }
-
-    logger.log("got request for udevadm query:" + req.query.pattern);
-
-	child_process.exec(_companion_directory + "/tools/query-udevadm.py --indent=2 " + pattern, function(error, stdout, stderr) {
-		res.setHeader('Content-Type', 'application/json');
-		res.send(stdout.toString());
-	});
-});
-
-app.get("/screen", function(req, res) {
-    var user = "";
-
-    if (req.query.user) {
-        user = "--user=" + req.query.user;
-    }
-
-    logger.log("got request for screens on user:" + req.query.user);
-
-	child_process.exec(_companion_directory + "/tools/query-screen.py --indent=2 " + user, function(error, stdout, stderr) {
-		res.setHeader('Content-Type', 'application/json');
-		res.send(stdout.toString());
-	});
 });
 
 var server = app.listen(2770, function() {
@@ -752,17 +711,7 @@ networking.on('connection', function(socket) {
 					if (stdout.indexOf("HANDSHAKE") > -1) {
 						socket.emit('wifi status', '<h4>Connecting: ' + ssid + '</h1>');
 					} else {
-						var ipString = ""
-						if (ip != undefined) {
-							ipString = ip
-						}
-						
-						var ssidString = ""
-						if (ssid != undefined) {
-							ssidString = ssid
-						}
-						
-						socket.emit('wifi status', '<h4 style="color:green;">Connected: ' + ssidString + ipString + '</h4>');
+						socket.emit('wifi status', '<h4 style="color:green;">Connected: ' + ssid + ip + '</h4>');
 					}
 				}
 			}
@@ -771,9 +720,9 @@ networking.on('connection', function(socket) {
 });
 
 function updateInternetStatus(should_log) {
-	var cmd = child_process.exec('ping -c1 fast.com', function (error, stdout, stderr) {
+	var cmd = child_process.exec('ping -c1 google.com', function (error, stdout, stderr) {
 		if (should_log) {
-			logger.log("ping -c1 fast.com : ", error + stdout + stderr);
+			logger.log("ping -c1 google.com : ", error + stdout + stderr);
 		}
 		if (error) {
 			_internet_connected = false;
@@ -806,34 +755,29 @@ function updateCPUStats () {
 
 		// If command fail, return no status
 		if (throttled[0] != "throttled") {
-			cpu_stats.cpu_status = "No status!";
+			cpu_stats.cpu_status = "No status"
 			io.emit('cpu stats', cpu_stats);
 			return;
 		}
 
 		// Decode command
-		throttled_code = parseInt(throttled[1]);
+		throttled_code = parseInt(throttled[1])
+		var throttled_list =
+		[
+			{bit: 18, type: "Throttling has occurred"},
+			{bit: 17, type: "Arm frequency capped has occurred"},
+			{bit: 16, type: "Under-voltage has occurred"},
+			{bit: 2, type: "Currently throttled"},
+			{bit: 1, type: "Currently arm frequency capped"},
+			{bit: 0, type: "Currently under-voltage"}
+		];
 
-		if (!throttled_code) {
-			cpu_stats.cpu_status = "OK";
-		} else {
-			var throttled_list =
-			[
-				{bit: 18, type: "Throttling has occurred"},
-				{bit: 17, type: "Arm frequency capped has occurred"},
-				{bit: 16, type: "Under-voltage has occurred"},
-				{bit: 2, type: "Currently throttled"},
-				{bit: 1, type: "Currently arm frequency capped"},
-				{bit: 0, type: "Currently under-voltage"}
-			];
-
-			for (i = 0; i < throttled_list.length; i++) {
-				if ((throttled_code >> throttled_list[i].bit) & 1) {
-					if (cpu_stats.cpu_status != "") {
-						cpu_stats.cpu_status += ", "
-					}
-					cpu_stats.cpu_status += throttled_list[i].type
+		for (i = 0; i < throttled_list.length; i++) {
+			if ((throttled_code >> throttled_list[i].bit) & 1) {
+				if (cpu_stats.cpu_status != "") {
+					cpu_stats.cpu_status += ", "
 				}
+				cpu_stats.cpu_status += throttled_list[i].type
 			}
 		}
 
@@ -844,7 +788,6 @@ function updateCPUStats () {
 
 function getCpuStatus(callback) {
 	var cmd = child_process.exec('vcgencmd get_throttled', function (error, stdout, stderr) {
-		logger.log("Got CPU Status: ", error, stdout, stderr);
 		callback(stdout);
 	});
 }
@@ -869,7 +812,7 @@ io.on('connection', function(socket) {
 		});
 		
 		try {
-			var file_path = home_dir+"/vidformat.param";
+			var file_path = "/home/pi/vidformat.param";
 			var file_data = fs.readFileSync(file_path).toString();
 			var fields = file_data.split("\n");
 			
@@ -922,7 +865,7 @@ io.on('connection', function(socket) {
 		logger.log("Writing profiles to file", _profiles);
 
 		try {
-			file_path = home_dir+"/camera-profiles";
+			file_path = "/home/pi/camera-profiles";
 			fs.writeFileSync(file_path, JSON.stringify(_profiles, null, 2));
 		} catch (err) {
 			logger.log("Error writing profile to file");
@@ -941,7 +884,7 @@ io.on('connection', function(socket) {
 		logger.log("save v4l2 profile");
 		try {
 			// Load gstreamer settings to use in this profile
-			var file_path = home_dir+"/vidformat.param";
+			var file_path = "/home/pi/vidformat.param";
 			var file_data = fs.readFileSync(file_path).toString();
 			var fields = file_data.split("\n");
 	
@@ -964,7 +907,7 @@ io.on('connection', function(socket) {
 			
 			logger.log("Writing profiles to file", _profiles);
 			
-			file_path = home_dir+"/camera-profiles";
+			file_path = "/home/pi/camera-profiles";
 			fs.writeFileSync(file_path, JSON.stringify(_profiles, null, 2));
 		} catch (err) {
 			logger.log("Error writing profile to file");
@@ -1077,9 +1020,9 @@ io.on('connection', function(socket) {
 				}
 			})
 			
-			logger.log(_companion_directory + '/scripts/restart_video.sh' + ' ' + profile.width + ' ' + profile.height + ' ' + profile.frameRate + ' ' + profile.device);
+			logger.log(_companion_directory + '/scripts/start_video.sh' + ' ' + profile.width + ' ' + profile.height + ' ' + profile.frameRate + ' ' + profile.device);
 			
-			var cmd = child_process.spawn(_companion_directory + '/scripts/restart_video.sh', [profile.width, profile.height, profile.frameRate, profile.device], {
+			var cmd = child_process.spawn(_companion_directory + '/scripts/start_video.sh', [profile.width, profile.height, profile.frameRate, profile.device], {
 				detached: true
 			});
 			
@@ -1145,7 +1088,7 @@ io.on('connection', function(socket) {
 				try {
 					////// Update frontend //////
 					// Re-load file/activeFormat
-					var file_path = home_dir+"/vidformat.param";
+					var file_path = "/home/pi/vidformat.param";
 					var file_data = fs.readFileSync(file_path).toString();
 					var fields = file_data.split("\n");
 					
@@ -1197,9 +1140,9 @@ io.on('connection', function(socket) {
 			
 			_activeFormat = { "frameSize": data.width + "x" + data.height, "frameRate": data.interval.denominator, "device": data.id, "format": "H264" }
 			
-			logger.log(_companion_directory + '/scripts/restart_video.sh' + ' ' + data.width + ' ' + data.height + ' ' + data.interval.denominator + ' ' + data.id);
+			logger.log(_companion_directory + '/scripts/start_video.sh' + ' ' + data.width + ' ' + data.height + ' ' + data.interval.denominator + ' ' + data.id);
 			
-			var cmd = child_process.spawn(_companion_directory + '/scripts/restart_video.sh', [data.width, data.height, data.interval.denominator, data.id], {
+			var cmd = child_process.spawn(_companion_directory + '/scripts/start_video.sh', [data.width, data.height, data.interval.denominator, data.id], {
 				detached: true
 			});
 			
@@ -1244,10 +1187,10 @@ io.on('connection', function(socket) {
 				params = fs.readFileSync(_companion_directory + "/params/gstreamer2.param.default");
 			}
 			
-			var file_path = home_dir+"/gstreamer2.param";
+			var file_path = "/home/pi/gstreamer2.param";
 			fs.writeFileSync(file_path, params);
 			
-			var cmd = child_process.spawn(_companion_directory + '/scripts/restart_video.sh', {
+			var cmd = child_process.spawn(_companion_directory + '/scripts/start_video.sh', {
 				detached: true
 			});
 			
@@ -1369,24 +1312,7 @@ io.on('connection', function(socket) {
 		});
 	});
 	
-	// system setup
-	socket.on('get ardusub version', function(data) {
-		logger.log('get ardusub version');
-		var cmd = child_process.exec(_companion_directory + '/tools/ardusub.py', function(error, stdout, stderr) {
-			logger.log(error+stdout+stderr);
-			// Check if version information is obtained or not
-			//If not, emit appropriate error message
-			if (error) {
-				logger.log("Version Information not found");
-				socket.emit('ardusub version', "Not found");
-			// If yes, emit it to the web-page
-			} else {
-				logger.log("Version Information Obtained")
-				socket.emit('ardusub version', stdout);
-			}
-		});
-	});
-
+	
 	// system setup
 	socket.on('update pixhawk', function(data) {
 		logger.log("update pixhawk");
@@ -1485,7 +1411,7 @@ io.on('connection', function(socket) {
 	});
 
 	socket.on('save params', function(data) {
-		var file_path = home_dir+"/" + data.file
+		var file_path = "/home/pi/" + data.file
 		fs.writeFile(file_path, data.params, function(err) {
 			if(err) {
 				logger.log(err);
@@ -1497,13 +1423,13 @@ io.on('connection', function(socket) {
 	});
 
 	socket.on('reboot px', function(data) {
-		var bash = "`timeout 5 mavproxy.py --master=/dev/autopilot --cmd=\"reboot;\"`&"
+		var bash = "`timeout 5 mavproxy.py --master=/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v2.x_0-if00 --cmd=\"reboot;\"`&"
 		child_process.exec(bash);
 		socket.emit('reboot px complete');
 	});
 
 	socket.on('load params', function(data) {
-		var user_file_path    = home_dir+"/" + data.file;
+		var user_file_path    = "/home/pi/" + data.file;
 		var default_file_path = _companion_directory + "/params/" +  data.file + ".default";
 		// Check if the user param file exists, use default file if it doesn't
 		fs.stat(user_file_path, function(err, stat) {
@@ -1524,7 +1450,7 @@ io.on('connection', function(socket) {
 	});
 
 	socket.on('delete params', function(data) {
-		var user_file_path    = home_dir+"/" + data.file;
+		var user_file_path    = "/home/pi/" + data.file;
 		// Check if the user param file exists, delete it if it does
 		fs.stat(user_file_path, function(err, stat) {
 			if (err == null) {
@@ -1540,82 +1466,6 @@ io.on('connection', function(socket) {
 		});
 	});
 
-	
-	
-	// ping device list request
-	socket.on('get ping devices', function(data) {
-		logger.log('get ping devices');
-
-		// The ping_enumerator.py script runs at boot and creates symlinks
-		// to devices connected at boot.
-		
-		// We could try running the enumerator script again now, but if it is
-		// already communicating with another process, the probe will fail.
-		var cmd = child_process.exec('ls /dev/serial/ping', function(error, stdout, stderr) {
-			logger.log(error, stdout, stderr);
-			if (error) {
-				logger.error('ping device list failed');
-				return;
-			}
-		
-			var devices = [];
-			
-			var lines = stdout.split("\n");
-			for (line in lines) {
-				device = lines[line];
-				logger.log('line', device);
-				logger.log(device.indexOf("Ping1D-id-"));
-				if (device.indexOf("Ping1D-id-") > -1) {
-					logger.log('Found Ping device', device);
-					devices.push(device);
-				}
-			}
-
-			socket.emit('ping devices', devices);
-		});
-	});
-	
-	// ping update
-	socket.on('update ping', function(data) {
-		logger.log("update ping", data);
-		var options = ['-d', '/dev/serial/ping/' + data.device, '-f', '/tmp/data/' + data.file]
-		
-		if (data.verify) {
-			logger.log("verify option");
-			options.push('-v');
-		}
-		
-		var cmd = child_process.spawn(_companion_directory + '/tools/PingBootloader.py', options, {
-			detached: true
-		});
-		
-		
-		// Ignore parent exit, we will restart this application after updating
-		cmd.unref();
-		
-		cmd.stdout.on('data', function (data) {
-			logger.log(data.toString());
-			socket.emit('terminal output', data.toString());
-			if (data.indexOf("Starting execution at address") > -1) {
-				socket.emit('ping update complete');
-			}
-		});
-		
-		cmd.stderr.on('data', function (data) {
-			logger.error(data.toString());
-			socket.emit('terminal output', data.toString());
-		});
-		
-		cmd.on('exit', function (code) {
-			logger.log('ping update exited with code ' + code.toString());
-			socket.emit('ping update complete');
-		});
-		
-		cmd.on('error', (err) => {
-			logger.error('ping update errored: ', err.toString());
-		});
-	});
-	
 	socket.on('restart video', function(data) {
 		logger.log(_companion_directory + '/scripts/restart-raspivid.sh "' + data.rpiOptions + '" "' + data.gstOptions + '"');
 		var cmd = child_process.spawn(_companion_directory + '/scripts/restart-raspivid.sh', [data.rpiOptions , data.gstOptions], {
@@ -1761,7 +1611,7 @@ io.on('connection', function(socket) {
 	socket.on('set default ip', function(ip) {
 		logger.log("set default ip", ip);
 
-		child_process.exec('echo ' + ip + ' > ' + home_dir + '/static-ip.conf', function (error, stdout, stderr) {
+		child_process.exec('/home/pi/companion/scripts/set_default_client_ip.sh ' + ip, function (error, stdout, stderr) {
 			logger.log(stdout + stderr);
 		});
 
@@ -1776,44 +1626,5 @@ io.on('connection', function(socket) {
 			};
 		});
 
-	});
-
-	socket.on ('configure-network', function(configuration) {
-		var network_config = configuration.trim();
-		if (network_config==="Server") {
-			logger.log("Companion set to dhcp server");
-			var cmd = child_process.spawn(home_dir + '/companion/scripts/config-dhcp-server.sh');
-		} else if (network_config==="Client") {
-			logger.log("Companion set to dhcp client");
-			var cmd = child_process.spawn(home_dir + '/companion/scripts/config-dhcp-client.sh');
-		} else if (network_config==="Manual") {
-			logger.log("Companion set to manual");
-			var cmd = child_process.spawn(home_dir + '/companion/scripts/config-manual.sh');
-		}
-
-		cmd.stdout.on('data', function (data) {
-			logger.log(data.toString());
-		});
-
-		cmd.stderr.on('data', function (data) {
-			logger.error(data.toString());
-		});
-
-		cmd.on('error', function (error) {
-			logger.error("Configure network error: " + error.toString());
-		});
-
-		cmd.on('exit', function (code) {
-			logger.log("Done configuring network with exit code " + code.toString());
-		});
-	});
-
-	socket.on('get-network-configuration', function() {
-		logger.log("Fetching current network configuration information");
-		
-		child_process.exec(home_dir+'/companion/scripts/get-config.sh', function(error, stdout, stderr) {
-			logger.log("Got network configuration mode:", stdout);
-			socket.emit('current network config', stdout);
-		});
 	});
 });

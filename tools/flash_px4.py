@@ -5,7 +5,6 @@ from urllib2 import urlopen
 import time
 import sys
 import signal
-home = os.environ['HOME']
 from optparse import OptionParser
 
 def timeout(signum, frame):
@@ -48,7 +47,7 @@ else:
                                 firmwareURL = options.url
                                 print "Downloading ArduSub firmware from %s" % firmwareURL
                 elif options.latest:
-                                firmwareURL = "http://firmware.ardupilot.org/Sub/latest/fmuv2/ardusub.apj"
+                                firmwareURL = "http://firmware.ardupilot.org/Sub/latest/PX4/ArduSub-v2.px4"
                                 print "Downloading latest ArduSub firmware from %s" % firmwareURL
                 else:
                                 firmwareURL = "http://firmware.ardupilot.org/Sub/stable/PX4/ArduSub-v2.px4"
@@ -74,15 +73,11 @@ os.system("screen -X -S mavproxy quit")
 # Flash Pixhawk
 print "Flashing Pixhawk..."
 if options.file is not None:
-    if(os.system("python -u " + home + "/companion/tools/px_uploader.py --port "
-    "/dev/serial/by-id/usb-3D_Robotics_PX4_BL_FMU_v2.x_0-if00,/dev/autopilot "
-    "'%s'" % options.file) != 0):
+    if(os.system("python -u /home/pi/companion/tools/px_uploader.py --port /dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v2.x_0-if00 '%s'" % options.file) != 0):
                 print "Error flashing pixhawk!"
                 exit(1)
 else:
-    if(os.system("python -u "+home+"/companion/tools/px_uploader.py --port "
-    "/dev/serial/by-id/usb-3D_Robotics_PX4_BL_FMU_v2.x_0-if00,/dev/autopilot "
-    "/tmp/ArduSub-v2.px4") != 0):
+    if(os.system("python -u /home/pi/companion/tools/px_uploader.py --port /dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v2.x_0-if00 /tmp/ArduSub-v2.px4") != 0):
                 print "Error flashing pixhawk! Do you have most recent version of companion? Try 'git pull' or scp."
                 exit(1)
                 
@@ -93,6 +88,6 @@ time.sleep(10)
 
 # Start screen session with mavproxy
 print "Restarting mavproxy"
-os.system("screen -dm -S mavproxy "+home+"/companion/scripts/start_mavproxy_telem_splitter.sh")
+os.system("screen -dm -S mavproxy /home/pi/companion/scripts/start_mavproxy_telem_splitter.sh")
 
 print "Complete!"

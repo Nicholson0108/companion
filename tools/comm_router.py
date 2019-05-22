@@ -4,15 +4,13 @@ import socket
 import time
 import json
 import endpoint
-import os
 
 debug = False
-home = os.environ['HOME']
 
 # load configuration from file
 try:
     print 'loading configuration from file...'
-    endpoint.load(home+'/routing.conf')
+    endpoint.load('/home/pi/routing.conf')
     print 'configuration successfully loaded'
 except Exception as e:
     print 'error loading configuration'
@@ -77,7 +75,7 @@ while True:
         sock.sendto(endpoint.to_json(), address)
         
         # save current list of endpoints
-        endpoint.save(home+'/routing.conf')
+        endpoint.save('/home/pi/routing.conf')
         
     except socket.error as e:
         continue

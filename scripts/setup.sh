@@ -2,7 +2,7 @@
 
 # RPi2 setup script for use as companion computer. This script is simplified for use with
 # the ArduSub code.
-cd $HOME
+cd /home/pi
 
 # Update package lists and current packages
 sudo apt-get update
@@ -10,10 +10,10 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -yq
 
 # Update Raspberry Pi
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq rpi-update
-sudo rpi-update
+sudo rpi-update -y
 
 # install python and pip
-sudo apt-get install -y python-dev python-pip python-libxml2 python-lxml libcurl4-openssl-dev
+sudo apt-get install -y python-dev python-pip python-libxml2
 
 # dependencies
 sudo apt-get install -y libxml2-dev libxslt1-dev
@@ -24,7 +24,7 @@ sudo pip install future
 sudo apt-get install -y git
 
 # download and install pymavlink from source in order to have up to date ArduSub support
-git clone https://github.com/mavlink/mavlink.git $HOME/mavlink
+git clone https://github.com/mavlink/mavlink.git /home/pi/mavlink
 
 pushd mavlink
 git submodule init && git submodule update --recursive
@@ -54,7 +54,7 @@ sudo n 5.6.0
 sudo npm install tty.js -g
 
 # clone bluerobotics companion repository
-git clone https://github.com/bluerobotics/companion.git $HOME/companion
+git clone https://github.com/bluerobotics/companion.git /home/pi/companion
 
 cd $HOME/companion/br-webui
 
@@ -87,8 +87,5 @@ sudo sed -i -e "\%$S1%d" \
 if [ "$1" = "gst" ]; then
     $HOME/companion/scripts/setup_gst.sh
 fi
-
-# Copy udev rules
-sudo cp $HOME/companion/params/100.autopilot.rules /etc/udev/rules.d/
 
 sudo reboot now

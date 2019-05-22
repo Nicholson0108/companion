@@ -1,6 +1,4 @@
 #!/bin/bash
-echo 'STARTING UPDATE'
-echo $(printenv)
 
 REMOTE=$1
 REF=$2
@@ -12,29 +10,26 @@ echo 'Please be patient and DO NOT REMOVE POWER FROM THE ROV!'
 sleep 10
 
 echo 'adding lock'
-touch $HOME/.updating
+touch /home/pi/.updating
 
 
 if [ -z "$4" ]; then
     echo 'skipping backup...'
 else
     echo 'removing old backup'
-    rm -rf $HOME/.companion
+    rm -rf /home/pi/.companion
 
     echo 'backup current repo'
-    cp -r $HOME/companion $HOME/.companion
+    cp -r /home/pi/companion /home/pi/.companion
 fi
 
-cd $HOME/companion
+cd /home/pi/companion
 
 echo 'stashing local changes'
 git -c user.name="companion-update" -c user.email="companion-update" stash
 
 echo 'tagging revert-point as' $(git rev-parse HEAD)
 git tag revert-point -f
-
-echo 'Check for local changes to save.'
-git stash
 
 if [ -z "$3" ]; then
     echo 'using branch reference'
@@ -52,4 +47,4 @@ else
 fi
 
 echo 'running post-update'
-$HOME/companion/scripts/post-update.sh
+/home/pi/companion/scripts/post-update.sh
