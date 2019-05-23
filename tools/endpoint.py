@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#ENDPOINT模块建立一个列表存储通过串口或UDP方式连接的端口信息，并实现基本的操作，以及JSON格式转换
 
 import serial
 import socket
@@ -95,7 +96,7 @@ class SerialEndpoint(Endpoint):
 			print("Error writing: %s") % e
 			return
 		
-		
+	# 转换成json格式	
 	def to_json(self):
 		return {"id": self.id,
 				"type": self.type,
@@ -147,7 +148,7 @@ class UDPEndpoint(Endpoint):
 			print e
 			return
 
-
+	# 转换成json格式
 	def to_json(self):
 		return {"id": self.id,
 				"type": self.type,
@@ -197,14 +198,16 @@ def remove(endpoint_id):
 		#print("Error removing: %s") % e
 		pass
 
-
+# 转换成json格式，通用方法
 def to_json(endpoint_id=None):
 	configuration = []
 	for endpoint in endpoints:
 		configuration.append(endpoint.to_json())
 	configuration = {"endpoints": configuration}
+	# 将Python数据类型字典进行json格式的编码，indent=4格式化输出
 	return json.dumps(configuration, indent=4)
 
+# 从JSON格式的endpoint中读取并生成ENDPOINT
 def from_json(endpoint_json):
 	if endpoint_json['type'] == 'serial':
 		new_endpoint = SerialEndpoint(
@@ -222,7 +225,7 @@ def from_json(endpoint_json):
 	
 	return new_endpoint
 
-
+# 从endpoints列表中找到源和目标端口并调用ENDPOINT类方法实现连接
 def connect(source_id, target_id):
 	source = None
 	target = None
@@ -240,7 +243,7 @@ def connect(source_id, target_id):
 		
 	source.connect(target)
 
-
+# 从endpoints列表中找到源端口并调用ENDPOINT类方法断开连接
 def disconnect(source_id, target_id):
 	source = None
 
@@ -251,7 +254,7 @@ def disconnect(source_id, target_id):
 	if source is None:
 		print("Error: source %s is not present") % source_id
 		
-	#it's ok if target does not exist, it may still be a desired endpoint
+	# it's ok if target does not exist, it may still be a desired endpoint
 		
 	source.disconnect(target_id)
 
@@ -259,13 +262,13 @@ def disconnect(source_id, target_id):
 def get_endpoints():
 	return endpoints
 
-
+# 保存成JSON格式
 def save(filename):
 	f = open(filename, 'w+')
 	f.write(to_json())
 	f.close()
 
-
+# 加载JSON格式文件并转换成字典
 def load(filename):
 	try:
 		f = open(filename, 'r')
