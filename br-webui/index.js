@@ -1,3 +1,4 @@
+// var定义变量，require加载模块
 var express = require('express');
 var app = express();
 const child_process = require('child_process');
@@ -8,6 +9,7 @@ var os = require("os");
 var env = process.env
 logger.log('ENVIRONMENT', process.env)
 logger.log('COMPANION_DIR', process.env.COMPANION_DIR)
+// 中间件
 app.use(express.static('public'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); // redirect bootstrap JS
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
@@ -36,6 +38,7 @@ var options = {
 	// if an error occurred while rendering, show detail or not, default to false 
 	traceError: false
 };
+// 相关配置
 app.set('view engine', 'liquid');
 app.engine('liquid', expressLiquid(options));
 app.use(expressLiquid.middleware);

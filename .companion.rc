@@ -1,6 +1,7 @@
+# 每次启动都要执行的配置文件，同时通过SCREEN启动一些后台程序
 export COMPANION_DIR=/home/pi/companion
 
-# copy default parameters if neccessary
+# 拷贝有必要的默认配置文件，并删除文件名后的.default
 cd $COMPANION_DIR/params
 
 for default_param_file in *; do
@@ -12,7 +13,11 @@ for default_param_file in *; do
     fi
 done
 
+# 如果.updating不是文件
 if [ ! -f /home/pi/.updating ]; then
+	# sudo -H 将HOME环境变量设为新身份的HOME环境变量 -u user 以指定的用户作为新身份运行
+	# screen让一个或多个任务共享一个会话 -d yourname将制定的screen作业离线
+    # -m 即使目前有已在作业中的screen作业，仍强制建立新的screeen作业 -S yourname指定作业名称
 	sudo -H -u pi screen -dm -S mavproxy $COMPANION_DIR/scripts/start_mavproxy_telem_splitter.sh
 	sudo -H -u pi $COMPANION_DIR/scripts/start_video.sh $(cat /home/pi/vidformat.param)
 	sudo -H -u pi screen -dm -S webui $COMPANION_DIR/scripts/start_webui.sh
@@ -25,10 +30,12 @@ if [ ! -f /home/pi/.updating ]; then
 else
 	sudo -H -u pi echo 'UPDATE FAILED!' >> /home/pi/.update_log
 	rm -f /home/pi/.updating
+	# 如果.companion是目录
 	if [ -d /home/pi/.companion ]; then
 		rm -rf $COMPANION_DIR
 		sudo -H -u pi cp -r /home/pi/.companion $COMPANION_DIR
 	fi
 	sudo -H -u pi echo 'Trying to run again...' >> /home/pi/.update_log
+	# 如果失败会重新执行
 	$COMPANION_DIR/.companion.rc
 fi

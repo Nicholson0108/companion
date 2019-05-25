@@ -34,9 +34,11 @@
 
 #
 # Serial firmware uploader for the PX4FMU bootloader
+# PX3FMU的引导加载程序的串口固件上传器
 #
 # The PX4 firmware file is a JSON-encoded Python object, containing
 # metadata fields and a zlib-compressed base64-encoded firmware image.
+# PX4固件文件是由JSON编码的python文件，包含元字段和按照base64编码并使用zlib压缩的镜像
 #
 # The uploader uses the following fields from the firmware file:
 #
@@ -549,7 +551,9 @@ fw = firmware(args.firmware)
 print("Loaded firmware for %x,%x, size: %d bytes, waiting for the bootloader..." % (fw.property('board_id'), fw.property('board_revision'), fw.property('image_size')))
 
 # Spin waiting for a device to show up
+# 等待设备并判断设备种类，然后加载固件
 try:
+	# 获取系统当前时间
     start = time.time();
     while True:
             portlist = []
@@ -568,10 +572,10 @@ try:
 
                     #print("Trying %s" % port)
 
-                    # create an uploader attached to the port
+                    # create an uploader attached to the port 打开端口
                     try:
                             if "linux" in _platform:
-                            # Linux, don't open Mac OS and Win ports
+									# Linux, don't open Mac OS and Win ports
                                     if not "COM" in port and not "tty.usb" in port:
                                             up = uploader(port, args.baud)
                             elif "darwin" in _platform:
