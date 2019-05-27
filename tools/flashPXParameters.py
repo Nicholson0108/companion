@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+# 找到控制站参数文件，默认/fw/standard.params，读取并设置参数
 import platform
 import csv
 import time
@@ -11,10 +11,12 @@ from optparse import OptionParser
 
 timeout = 1
 
+# 设置命令行参数
 parser = OptionParser()
 parser.add_option("--file", dest="file", default=None, help="Load from file")
 (options,args) = parser.parse_args()
 
+# 设置读取文件，默认/fw/standard.params
 if options.file is not None:
     try:
         print("Attempting upload from file %s") % options.file
@@ -25,7 +27,6 @@ if options.file is not None:
 else:
     filename = 'standard.params'
 
-
 # Port settings
 port = ''
 if platform.system() == 'Linux':
@@ -35,6 +36,7 @@ elif platform.system() == 'Darwin':
 
 print "Waiting for heartbeat."
 
+# 连接端口，等待心跳包
 try:
 	master = mavutil.mavlink_connection(port)
 	master.wait_heartbeat()
@@ -53,8 +55,10 @@ print "Uploading parameter file."
 
 failed = []
 
+# 打开文件
 with open(filename,'r') as f:
 	for line in f:
+		# 读取参数
 		line = line.split(',')
 		name = line[0]
 		value = float(line[1])
@@ -64,6 +68,7 @@ with open(filename,'r') as f:
 		
 		print "Sending " + name + " = " + str(value) + "\t\t\t", 
 		
+		# 尝试修改参数，至多尝试三次
 		while not verified and attempts < 3:
 			master.param_set_send(name,value)
 			start = time.time()

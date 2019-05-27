@@ -1,4 +1,7 @@
 #!/usr/bin/python
+# 使用UDP与上位机192.168.2.1：14550端口建立通信，监听本地0.0.0.0：25102端口获取温度、深度、方向信息，
+# 与默认地址http://37.139.8.112：8000通信，获取master.locator位置信息，向本地0.0.0.0：25100端口发送locator数据，
+# 向默认地址上传深度温度方向信息
 
 import time
 import socket
@@ -17,8 +20,8 @@ parser.add_argument('--ip', action="store", type=str, default="37.139.8.112", he
 parser.add_argument('--port', action="store", type=str, default="8000", help="remote port to query on.")
 args = parser.parse_args()
 
-
 connected = False
+
 while not connected:
     time.sleep(5)
     print("scanning for Water Linked underwater GPS...")
@@ -33,11 +36,14 @@ sockit.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sockit.setblocking(0)
 sockit.bind(('0.0.0.0', 25102))
 
+# 默认地址http://37.139.8.112：8000
 gpsUrl = "http://" + args.ip + ":" + args.port
 
 def processMasterPosition(response, *args, **kwargs):
     print 'got master response:', response.text
+	# grequests模块的方法json()，返回JSON格式
     result = response.json()
+	# 解析并编辑字段信息
     master.mav.heartbeat_send(
         0,                     # type                      : Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM) (uint8_t)
         1,                     # autopilot                 : Autopilot type / class. defined in MAV_AUTOPILOT ENUM (uint8_t)
@@ -70,6 +76,7 @@ def processMasterPosition(response, *args, **kwargs):
 def processLocatorPosition(response, *args, **kwargs):
     print 'got global response:', response.text
     result = response.json()
+	# 解析并编辑字段信息
     result['lat'] = result['lat'] * 1e7
     result['lon'] = result['lon'] * 1e7
     result['fix_type'] = 3
@@ -77,9 +84,11 @@ def processLocatorPosition(response, *args, **kwargs):
     result['vdop'] = 1.0
     result['satellites_visible'] = 10
     result['ignore_flags'] = 8 | 16 | 32
+	# 从JSON格式转成STR
     result = json.dumps(result);
     print 'sending      ', result
     
+	# 发送给0.0.0.0:25100端口
     sockit.sendto(result, ('0.0.0.0', 25100))
     
 def notifyPutResponse(response, *args, **kwargs):
@@ -95,6 +104,7 @@ while True:
         last_locator_update = time.time()
         url = gpsUrl + "/api/v1/position/global"
         print 'requesting data from', url
+		# 获取Locator位置信息并调用processLocatorPosition函数
         request = grequests.get(url, session=s, hooks={'response': processLocatorPosition})
         job = grequests.send(request)
         
@@ -102,14 +112,17 @@ while True:
         last_master_update = time.time()
         url = gpsUrl + "/api/v1/position/master"
         print 'requesting data from', url
+		# 获取Master位置信息并调用processMasterPosition函数
         request = grequests.get(url, session=s, hooks={'response': processMasterPosition})
         job = grequests.send(request)
     
     try:
         datagram = sockit.recvfrom(4096)
+		# 从str转成JSON格式
         recv_payload = json.loads(datagram[0])
         
         # Send depth/temp to external/depth api
+		# 设置深度和温度信息
         ext_depth = {}
         ext_depth['depth'] = max(min(100, recv_payload['depth']), 0)
         ext_depth['temp'] = max(min(100, recv_payload['temp']), 0)
@@ -123,10 +136,12 @@ while True:
         
         # Equivalent
         # curl -X PUT -H "Content-Type: application/json" -d '{"depth":1,"temp":2}' "http://37.139.8.112:8000/api/v1/external/depth"
+		# 向默认地址发送深度和温度信息
         request = grequests.put(url, session=s, headers=headers, data=send_payload, hooks={'response': notifyPutResponse})
         grequests.send(request)
         
         # Send heading to external/orientation api
+		# 设置方向信息
         ext_orientation = {}
         ext_orientation['orientation'] = max(min(360, recv_payload['orientation']), 0)
         
@@ -137,6 +152,7 @@ while True:
         url = gpsUrl + "/api/v1/external/orientation"
         print 'sending', send_payload, 'to', url
         
+		# 向默认地址发送方向信息
         request = grequests.put(url, session=s, headers=headers, data=send_payload, hooks={'response': notifyPutResponse})
         grequests.send(request)
 

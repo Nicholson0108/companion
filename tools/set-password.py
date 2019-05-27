@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# 从标准输入设置新密码
 
 import sys
 import subprocess
@@ -16,6 +17,7 @@ parser.add_option("--newpass", dest = "newpass", default = None,
 (options,args) = parser.parse_args()
 
 # Exit if password or user is not given (required)
+# 需要已经设置好密码
 if options.user is None:
 	print('No username entered')
 	exit(11)
@@ -31,23 +33,29 @@ with open("/etc/shadow") as f:
 	content = f.readlines()
 
 # Get password hash for user
+# 获取密码
 encryptedpass = None
 for line in content:
 	# Extract username and encrypted password string from line
+	# 按行提取用户名和已加密的字符串
 	[u, p] = line.split(':')[0:2];
 	if u == options.user:
 		encryptedpass = p
 
 # Check input password against correct password (if the user exists)
+# 校验密码，鉴定用户身份
 if encryptedpass is not None:
 	# Extract encryption algorithm and salt from encrypted password
 	[algorithm, salt] = encryptedpass.split('$')[1:3]
 	algorsalt = '$' + algorithm + '$' + salt + '$'		# typ. $6$<salt>$
 
 	# If the password is correct, exit without errors
+	# 把密码按同样方式加密，比较字符串是否一致
 	if encryptedpass == crypt(options.oldpass, algorsalt):	# encrypt to check
 		# Encrypt the new password the same way as the old one was
+		# 修改成新密码
 		newencryptedpass = crypt(options.newpass, algorsalt)
+		# 父进程等待子进程完成，并返回退出信息
 		r = subprocess.call(('usermod', '-p', newencryptedpass, options.user))
 
 		# If update was successful, exit successfully
