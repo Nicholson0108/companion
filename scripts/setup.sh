@@ -1,7 +1,9 @@
 #!/bin/bash
 
+# 帮助配置环境、安装软件，修改了/boot/config.txt和/etc/rc.local中的参数
 # RPi2 setup script for use as companion computer. This script is simplified for use with
 # the ArduSub code.
+
 cd /home/pi
 
 # Update package lists and current packages 

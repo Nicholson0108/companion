@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# 设置默认的客户端ip，将ip=${1}添加到cmdline.txt文件末尾并拷贝到/boot/cmdline.txt
+# 设置默认的客户端ip，将ip=${1}添加到cmdline.txt文件末尾
+# 并将文件拷贝到/tmp/cmdline.txt和/boot/cmdline.txt
 
 # Copy default cmdline to temp
 cp /home/pi/companion/tools/cmdline.txt /tmp/

@@ -47,6 +47,7 @@ while True:
     # Check at 1Hz until data is seen on the line, then check at 20Hz
     if data_received:
         if not gps_type_set:
+			# -S 工作screen名称 -p窗口名称 -X执行什么命令
             system('screen -S mavproxy -p 0 -X stuff "param set GPS_TYPE 14^M"')
             gps_type_set = True
         time.sleep(0.05)
