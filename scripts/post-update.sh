@@ -1,8 +1,13 @@
 #!/bin/bash
 
 # Bugfix for revert on first update. 0.0.7 had a bug in update.sh where the companion directory was not copied correctly (no -r option)
+# 修正了第一次更新时的错误。0.0.7的update.sh中有一个bug导致没有正确复制companion目录
+# 恢复成0.0.7版，获取nodegit包，安装npm，更新子模块
+# 其他同post-sideload.sh
+
 # Do it the right way here so we can revert if
 cd /home/pi/companion
+# 恢复成0.0.7版
 WAS_0_0_7=$(git rev-list --count revert-point...0.0.7)
 if [ $WAS_0_0_7 == 0 ]; then
     echo '0.0.7 update, repairing fall-back...'
@@ -13,6 +18,7 @@ fi
 
 cd /home/pi/companion/br-webui
 
+# 获取nodegit包
 if ! npm list nodegit 2>&1 | grep -q nodegit@0.18.3; then
     echo 'Fetching nodegit packages for raspberry pi...'
     wget --timeout=15 --tries=2 https://s3.amazonaws.com/downloads.bluerobotics.com/Pi/dependencies/nodegit/nodegit_required_modules.zip -O /tmp/nodegit_required_modules.zip
@@ -30,7 +36,7 @@ if ! npm list nodegit 2>&1 | grep -q nodegit@0.18.3; then
 fi
 
 # TODO prune unused npm modules here
-
+# 安装npm
 echo 'run npm install'
 npm install
 if [ $? -ne 0 ] # If "npm install" failed:
@@ -44,6 +50,7 @@ fi
 
 cd /home/pi/companion
 
+# 更新子模块
 echo 'Updating submodules...'
 git submodule init && git submodule sync
 if [ $? -ne 0 ] # If either "git submodule" failed:
@@ -191,7 +198,7 @@ for default_param_file in *; do
     fi
 done
 
-# change the pi user password to 'bluerobotics' instead of the default 'raspberry'
+# change the pi user password to 'companion' instead of the default 'raspberry'
 PRE_0_0_8=$(( git rev-list --count --left-right 0.0.8...revert-point || echo 0 ) | cut -f1)
 if (( $PRE_0_0_8 > 0 )); then
     echo "changing default password to 'companion'..."

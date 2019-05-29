@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 # 从标准输入设置新密码
 
 import sys

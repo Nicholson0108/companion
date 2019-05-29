@@ -1,6 +1,11 @@
 #!/bin/bash
+
+# 为rpi camera安装驱动bcm2835_v412，设置帧速率90fps，找到支持h264的设备，并启动video
+
 export LD_LIBRARY_PATH=/usr/local/lib/
 
+# 设置参数
+# 判断是否有命令行参数，-z字符串长度为零则为真
 if [ -z "$1" ]; then
     WIDTH=$(cat ~/vidformat.param | xargs | cut -f1 -d" ")
     HEIGHT=$(cat ~/vidformat.param | xargs | cut -f2 -d" ")
@@ -16,6 +21,8 @@ fi
 echo "start video with width $WIDTH height $HEIGHT framerate $FRAMERATE device $DEVICE"
 
 # Load Pi camera v4l2 driver
+# lsmod命令用来查询系统加载的所有模块，
+# 配合grep查询系统是否加载了bcm2835-v4l2模块
 if ! lsmod | grep -q bcm2835_v4l2; then
     echo "loading bcm2835 v4l2 module"
     sudo modprobe bcm2835-v4l2
@@ -24,10 +31,13 @@ fi
 screen -X -S video quit
 
 # check if this device is H264 capable before streaming
+# 在流媒体之前，检查该设备是否支持H264
 # It would be better not to specify framerate, but there is an issue with RPi camera v4l2 driver, it will cause kernel error to use default framerate (90 fps)
+# 最好不要指定帧率，但是RPi camera v4l2驱动程序有一个问题，使用默认帧率会导致内核错误(90 fps)
 gst-launch-1.0 -v v4l2src device=$DEVICE do-timestamp=true num-buffers=1 ! video/x-h264 ! h264parse ! queue ! rtph264pay config-interval=10 pt=96 ! fakesink
 
 # if it is not, check all available devices, and use the first h264 capable one instead
+# 如果不支持，则查找所有可用的设备，并使用第一个支持的设备
 if [ $? != 0 ]; then
     echo "specified device $DEVICE failed"
     for DEVICE in $(ls /dev/video*); do
@@ -41,13 +51,16 @@ if [ $? != 0 ]; then
 fi
 
 # load gstreamer options
+# tr '\n' ' ' 用空格替换\n
 gstOptions=$(tr '\n' ' ' < /home/pi/gstreamer2.param)
 
 # make sure framesize and framerate are supported
 
 # workaround to make sure we don't attempt 1080p@90fps on pi camera
+# 解决办法，以确保我们对pi相机不尝试1080p@90fps
 v4l2-ctl --device $DEVICE --set-parm $FRAMERATE
 
+# 开启视频流
 echo "attempting device $DEVICE with width $WIDTH height $HEIGHT framerate $FRAMERATE options $gstOptions"
 gst-launch-1.0 -v v4l2src device=$DEVICE do-timestamp=true num-buffers=1 ! video/x-h264, width=$WIDTH, height=$HEIGHT, framerate=$FRAMERATE/1 ! h264parse ! queue ! rtph264pay config-interval=10 pt=96 ! fakesink
 

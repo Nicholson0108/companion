@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 #ENDPOINT模块建立一个列表存储通过串口或UDP方式连接的端口信息，并实现基本的操作，以及JSON格式转换
 
 import serial

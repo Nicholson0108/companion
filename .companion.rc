@@ -1,4 +1,5 @@
-# 每次启动都要执行的配置文件，同时通过SCREEN启动一些后台程序
+# 每次启动都要执行的配置文件，保证更新锁解锁，同时通过SCREEN启动一些后台程序
+
 export COMPANION_DIR=/home/pi/companion
 
 # 拷贝有必要的默认配置文件，并删除文件名后的.default

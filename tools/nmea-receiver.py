@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 # 监听并解析本地0.0.0.0：27000端口的NMEA格式的GPS数据
 
 import time
