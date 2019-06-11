@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# encoding=utf-8
 
 # 创建socket网络连接端点，监听0.0.0.0：18990端口，并实现对端口字典ENDPOINTS的操作
 

@@ -1,6 +1,7 @@
 #!/usr/bin/python
+# encoding=utf-8
 
-# 监听并解析本地0.0.0.0：27000端口的NMEA格式的GPS数据
+# 监听并解析本地0.0.0.0：27000端口的NMEA格式的GPS数据（gps-replay），并发送到127.0.0.1:25100端口
 
 import time
 import pynmea2

@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# encoding=utf-8
 
 # 找到控制站参数文件，默认/fw/standard.params
 # 设置端口linux(/dev/ttyACM0)/darwin(/dev/tty.usbmodem1)，读取并设置参数

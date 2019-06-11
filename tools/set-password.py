@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# encoding=utf-8
 
 # 从标准输入设置新密码
 

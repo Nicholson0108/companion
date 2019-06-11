@@ -1,4 +1,5 @@
 #!/usr/bin/python -u
+# encoding=utf-8
 
 # 获取本地或下载最新飞控固件ArduSub-v2.px4并调用px_uploader.py文件执行
 

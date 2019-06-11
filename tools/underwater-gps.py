@@ -1,8 +1,9 @@
 #!/usr/bin/python
+# encoding=utf-8
 
 # 使用UDP与上位机192.168.2.1：14550端口建立通信，监听本地0.0.0.0:25102端口获取温度、深度、方向信息，
 # 与默认地址http://ip:port通信，获取master.locator位置信息，向本地0.0.0.0:25100端口发送locator数据，
-# 向默认地址上传深度温度方向信息
+# 向默认地址http://37.139.8.112：8000,companion.rc中指定了192.168.2.94:80上传深度温度方向信息
 
 import time
 import socket
@@ -37,7 +38,7 @@ sockit.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sockit.setblocking(0)
 sockit.bind(('0.0.0.0', 25102))
 
-# 默认地址http://37.139.8.112：8000
+# 默认地址http://37.139.8.112：8000,companion.rc中指定了192.168.2.94:80
 gpsUrl = "http://" + args.ip + ":" + args.port
 
 def processMasterPosition(response, *args, **kwargs):
@@ -136,7 +137,7 @@ while True:
         print 'sending', send_payload, 'to', url
         
         # Equivalent
-        # curl -X PUT -H "Content-Type: application/json" -d '{"depth":1,"temp":2}' "http://37.139.8.112:8000/api/v1/external/depth"
+        # curl -X PUT -H "Content-Type: application/json" -d '{"depth":1,"temp":2}' "http://192.168.2.94:80/api/v1/external/depth"
 		# 向默认地址发送深度和温度信息
         request = grequests.put(url, session=s, headers=headers, data=send_payload, hooks={'response': notifyPutResponse})
         grequests.send(request)
